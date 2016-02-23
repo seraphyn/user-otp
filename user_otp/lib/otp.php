@@ -41,19 +41,19 @@ class OC_USER_OTP extends OC_User_Backend{
  	 * @var \OC_User_Backend[] $backends
 	 */
 	private static $_backends = null;
-	
+
 	/**
  	 * @var Multiotp $mOtp
 	 */
     private $mOtp;
-    
+
     private $_userBackend = null;
 
     /**
      * Constructor sets up {@link $firstvar}
      */
     public function __construct(){
-		    //OC_Log::write('OC_USER_OTP', __FUNCTION__.'().', OC_Log::DEBUG);
+		  //OCP\Util::writeLog('OC_USER_OTP', __FUNCTION__.'().', OCP\Util::DEBUG);
         $this->mOtp =  new MultiOtpDb(OCP\Config::getAppValue(
             'user_otp','EncryptionKey','DefaultCliEncryptionKey')
         );
@@ -64,9 +64,9 @@ class OC_USER_OTP extends OC_User_Backend{
             OCP\Config::getAppValue('user_otp','MaxBlockFailures',6)
         );
          $this->mOtp->SetMaxEventWindow(OCP\Config::getAppValue('user_otp','UserTokenMaxEventWindow',100));
-        
+
     }
-    
+
 	public function getSupportedActions() {
 		$actions = 0;
 		foreach($this->possibleActions AS $action => $methodName) {
@@ -79,17 +79,17 @@ class OC_USER_OTP extends OC_User_Backend{
 
 		return $actions;
 	}
-    
+
     public static function registerBackends($usedBackends){
-      //OC_Log::write('OC_USER_OTP', __FUNCTION__.'().', OC_Log::DEBUG);
-      if(self::$_backends === null){
+			//OCP\Util::writeLog('OC_USER_OTP', __FUNCTION__.'().', OCP\Util::DEBUG);
+			if(self::$_backends === null){
         foreach ($usedBackends as $backend){
-          //OC_Log::write('user_otp', 'instance '.$backend.' backend.', OC_Log::DEBUG);
-          self::$_backends[$backend] = new $backend();
+					 //OCP\Util::writeLog('user_otp', 'instance '.$backend.' backend.', OCP\Util::DEBUG);
+					self::$_backends[$backend] = new $backend();
         }
       }
     }
-		
+
 	/**
 	 * @brief delete a user
 	 * @param string $uid The username of the user to delete
@@ -100,7 +100,7 @@ class OC_USER_OTP extends OC_User_Backend{
 	public function deleteUser( $uid ) {
 		return $this->__call("deleteUser",array($uid));
 	}
-	
+
 	/**
 	 * @brief Create a new user
 	 * @param $uid The username of the user to create
@@ -113,7 +113,7 @@ class OC_USER_OTP extends OC_User_Backend{
 	public function createUser( $uid, $password ) {
 		return $this->__call("createUser",array($uid,$password));
 	}
-	
+
 	/**
 	 * @brief Set password
 	 * @param $uid The username
@@ -142,7 +142,7 @@ class OC_USER_OTP extends OC_User_Backend{
 	 * @return boolean
 	 */
 	public function userExists($uid) {
-		//OC_Log::write('OC_USER_OTP', __FUNCTION__.'().', OC_Log::DEBUG);
+		 //OCP\Util::writeLog('OC_USER_OTP', __FUNCTION__.'().', OCP\Util::DEBUG);
         if($this->mOtp->CheckUserExists($uid)){
 			return true;
 		}
@@ -154,7 +154,7 @@ class OC_USER_OTP extends OC_User_Backend{
 			return $backend->userExists($uid);
 		}
 	}
- 
+
 	/**
 	 * @brief get the user's home directory
 	 * @param string $uid the username
@@ -172,14 +172,14 @@ class OC_USER_OTP extends OC_User_Backend{
 	public function getDisplayName($uid) {
 		return $this->__call("getDisplayName",array($uid));;
 	}
-	
+
 	/**
 	 * @brief get user real backend
 	 * @param string $uid the username
 	 * @return backend
 	 */
 	public function getRealBackend($uid) {
-		//OC_Log::write('OC_USER_OTP', __FUNCTION__.'().', OC_Log::DEBUG);
+    //OCP\Util::writeLog('OC_USER_OTP', __FUNCTION__.'().', OCP\Util::DEBUG);
 		if($this->_userBackend !== null){
 			return $this->_userBackend;
 		}
@@ -192,9 +192,9 @@ class OC_USER_OTP extends OC_User_Backend{
 		}
 		return null;
 	}
-	
+
 	public function __call($name, $arguments){
-		OC_Log::write('OC_USER_OTP', $name.'().', OC_Log::DEBUG);
+	  OCP\Util::writeLog('OC_USER_OTP', $name.'().', OCP\Util::DEBUG);
 		$userBackend=$this->getRealBackend(OCP\User::getUser());
     //var_dump($userBackend);
 		if($userBackend===null){
@@ -207,7 +207,7 @@ class OC_USER_OTP extends OC_User_Backend{
 				return false;
 			}
 		}
-		
+
 		$reflectionMethod = new ReflectionMethod(get_class($userBackend),$name);
 		return $reflectionMethod->invokeArgs($userBackend,$arguments);
 	}
@@ -229,12 +229,12 @@ class OC_USER_OTP extends OC_User_Backend{
      */
     public function checkPassword($uid, $password) {
 		//print_r($_SERVER);
-		OC_Log::write('OC_USER_OTP', __FUNCTION__.'().', OC_Log::DEBUG);
+    OCP\Util::writeLog('OC_USER_OTP', __FUNCTION__.'().', OCP\Util::DEBUG);
 		$userBackend=$this->getRealBackend($uid);
 		if ($userBackend===null){
 			return false;
 		}
-		
+
 		// enable change password without ipunt OTP
 		if(isset($_SERVER['PATH_INFO']) && $_SERVER['PATH_INFO']=="/settings/personal/changepassword"){
 			return $userBackend->checkPassword($uid, $password);
@@ -269,13 +269,13 @@ class OC_USER_OTP extends OC_User_Backend{
         }
 
         if(!$this->mOtp->CheckUserExists($uid)){
-            OC_Log::write('OC_USER_OTP','No OTP for user '.$uid.' use user backend', OC_Log::DEBUG);
+            OCP\Util::writeLog('OC_USER_OTP','No OTP for user '.$uid.' use user backend', OCP\Util::DEBUG);
             return $userBackend->checkPassword($uid, $password);
         }else{
             $this->mOtp->SetUser($uid);
             $authMethode=OCP\Config::getAppValue('user_otp','authMethod',_AUTH_DEFAULT_);
-            OC_Log::write('OC_USER_OTP','used auth method : '.$authMethode, OC_Log::DEBUG);
-            switch($authMethode){
+						OCP\Util::writeLog('OC_USER_OTP','used auth method : '.$authMethode, OCP\Util::DEBUG);
+						switch($authMethode){
                 case _AUTH_STANDARD_:
                     return $userBackend->checkPassword($uid, $password);
                     break;
@@ -312,11 +312,11 @@ class OC_USER_OTP extends OC_User_Backend{
 				  //~ var_dump($password);
 						//~ var_dump($_POST['otpPassword']);
 				  //~ exit;
-                  
+
                   if(!isset($_POST['otpPassword']) || $_POST['otpPassword']===""){
                     return false;
                   }
-                  OC_Log::write('OC_USER_OTP','used OTP : '.$_POST['otpPassword'], OC_Log::DEBUG);
+                  OCP\Util::writeLog('OC_USER_OTP','used OTP : '.$_POST['otpPassword'], OCP\Util::DEBUG);  
                   $result = $this->mOtp->CheckToken($_POST['otpPassword']);
                     if ($result===0){
                       return $userBackend->checkPassword($uid, $password);
@@ -330,6 +330,6 @@ class OC_USER_OTP extends OC_User_Backend{
             }
         }
     }
-    
+
 }
 ?>
